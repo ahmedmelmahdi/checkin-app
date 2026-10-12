@@ -23,13 +23,21 @@ export default function App() {
   }, []);
 
   async function handleCheckIn(spot) {
+    const trimmedName = name.trim();
+
+    if (trimmedName === '') {
+      Alert.alert('Name Required', 'Please enter your name before checking in.');
+      return;
+    }
+
     try {
       await addDoc(collection(db, 'checkins'), {
-        name: name,
+        name: trimmedName,
         spot: spot,
         createdAt: serverTimestamp(),
       });
-      Alert.alert('Checked In', `${name} checked in at ${spot}`);
+      Alert.alert('Checked In', `${trimmedName} checked in at ${spot}`);
+      setName('');
     } catch (error) {
       Alert.alert('Error', error.message);
     }
