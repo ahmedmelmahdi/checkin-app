@@ -1,13 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, View, Button, Alert, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 const SPOTS = ['Thomas Cooper Library', 'Russell House', 'Molinaroli College of Engineering and Computing'];
 
 export default function App() {
   const [name, setName] = useState('');
+  const [checkins, setCheckins] = useState([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'checkins'), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setCheckins(data);
+    });
+    return unsubscribe;
+  }, []);
 
   async function handleCheckIn(spot) {
     try {
@@ -33,12 +42,16 @@ export default function App() {
         onChangeText={setName}
       />
 
-      {SPOTS.map((spot) => (
-        <View key={spot} style={styles.card}>
-          <Text style={styles.spotName}>{spot}</Text>
-          <Button title="Check In" onPress={() => handleCheckIn(spot)} />
-        </View>
-      ))}
+      {SPOTS.map((spot) => {
+        const count = checkins.filter((c) => c.spot === spot).length;
+        return (
+          <View key={spot} style={styles.card}>
+            <Text style={styles.spotName}>{spot}</Text>
+            <Text style={styles.count}>Check-ins: {count}</Text>
+            <Button title="Check In" onPress={() => handleCheckIn(spot)} />
+          </View>
+        );
+      })}
 
       <StatusBar style="auto" />
     </ScrollView>
@@ -72,6 +85,11 @@ const styles = StyleSheet.create({
   },
   spotName: {
     fontSize: 18,
+    marginBottom: 5,
+  },
+  count: {
+    fontSize: 14,
+    color: '#555',
     marginBottom: 10,
   },
 });
