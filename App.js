@@ -6,6 +6,10 @@ import { db } from './firebaseConfig';
 
 const SPOTS = ['Thomas Cooper Library', 'Russell House', 'Molinaroli College of Engineering and Computing'];
 
+function getTime(checkin) {
+  return checkin.createdAt ? checkin.createdAt.toMillis() : Date.now();
+}
+
 export default function App() {
   const [name, setName] = useState('');
   const [checkins, setCheckins] = useState([]);
@@ -43,12 +47,27 @@ export default function App() {
       />
 
       {SPOTS.map((spot) => {
-        const count = checkins.filter((c) => c.spot === spot).length;
+        const spotCheckins = checkins
+          .filter((c) => c.spot === spot)
+          .sort((a, b) => getTime(b) - getTime(a));
+        const recent = spotCheckins.slice(0, 5);
+
         return (
           <View key={spot} style={styles.card}>
             <Text style={styles.spotName}>{spot}</Text>
-            <Text style={styles.count}>Check-ins: {count}</Text>
-            <Button title="Check In" onPress={() => handleCheckIn(spot)} />
+            <Text style={styles.count}>Check-ins: {spotCheckins.length}</Text>
+
+            {recent.length === 0 ? (
+              <Text style={styles.name}>No check-ins yet</Text>
+            ) : (
+              recent.map((c) => (
+                <Text key={c.id} style={styles.name}>• {c.name}</Text>
+              ))
+            )}
+
+            <View style={styles.buttonSpacing}>
+              <Button title="Check In" onPress={() => handleCheckIn(spot)} />
+            </View>
           </View>
         );
       })}
@@ -90,6 +109,13 @@ const styles = StyleSheet.create({
   count: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 10,
+    marginBottom: 5,
+  },
+  name: {
+    fontSize: 14,
+    marginLeft: 5,
+  },
+  buttonSpacing: {
+    marginTop: 10,
   },
 });
